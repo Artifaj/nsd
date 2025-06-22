@@ -18,7 +18,7 @@ ROCNIKY = {
     "Kategorie IV.": ["3.A", "3.B", "3.C"]
 }
 
-DB_FILE = "/tmp/nsd_points_web.db"
+DB_FILE = "nsd_points_web.db"
 
 # Databázové funkce
 def init_database():
@@ -66,9 +66,6 @@ if not os.path.exists(DB_FILE):
 st.set_page_config(page_title="Sázky NSD", layout="wide")
 st.title("Sázky - NSD (webová verze)")
 
-st.write("Aplikace se načetla!")
-
-# Načtení bodů
 data = get_all_points()
 
 # --- ADMIN SEKCE ---
@@ -86,7 +83,6 @@ with st.expander("🔑 Admin sekce (úprava bodů)"):
         if st.button("Uložit změny", key="save_admin"):
             update_points(new_points)
             st.success("Body byly uloženy!")
-            st.experimental_rerun()
     elif admin_pass:
         st.error("Nesprávné heslo!")
 
@@ -103,35 +99,33 @@ for rocnik, tridy in ROCNIKY.items():
 
 # --- VYHLÁŠENÍ VÍTĚZE ---
 st.header("Vyhlášení vítěze a výpočet bodů")
-winners = {}
+data = get_all_points()  # vždy aktuální
 for rocnik, tridy in ROCNIKY.items():
-    winners[rocnik] = st.selectbox(f"Vítěz pro {rocnik}", tridy, key=f"winner_{rocnik}")
-
-if st.button("Vyhlásit vítěze a spočítat body", key="calc_results"):
-    new_points = data.copy()
-    vysledky = {}
-    for rocnik, tridy in ROCNIKY.items():
-        winner = winners[rocnik]
+    st.subheader(f"{rocnik}")
+    winner = st.selectbox(f"Vítěz pro {rocnik}", tridy, key=f"winner_{rocnik}")
+    if st.button(f"Vyhlásit vítěze a spočítat body pro {rocnik}", key=f"calc_{rocnik}"):
+        new_points = data.copy()
+        vysledky = {}
         for class_name in tridy:
             bet = bets[class_name]
-            if bet["amount"] > 0:
-                if bet["target"] == winner:
-                    new_points[class_name] += bet["amount"]
-                    vysledek = f"Vyhráli {bet['amount']} bodů"
+            bet_target = bet["target"]
+            bet_amount = bet["amount"]
+            if bet_amount > 0:
+                if bet_target == winner:
+                    new_points[class_name] += bet_amount
+                    vysledek = f"Vyhráli {bet_amount} bodů"
                 else:
-                    new_points[class_name] -= bet["amount"]
-                    vysledek = f"Prohráli {bet['amount']} bodů"
+                    new_points[class_name] -= bet_amount
+                    vysledek = f"Prohráli {bet_amount} bodů"
             else:
                 vysledek = "Bez sázky"
             vysledky[class_name] = vysledek
-    update_points(new_points)
-    st.success("Body byly aktualizovány!")
-    st.write("### Výsledky:")
-    for rocnik, tridy in ROCNIKY.items():
-        st.markdown(f"**{rocnik}**")
+        update_points(new_points)
+        st.success(f"Body pro {rocnik} byly aktualizovány!")
+        st.write("### Výsledky:")
         for class_name in tridy:
             st.write(f"{class_name}: {new_points[class_name]} bodů ({vysledky[class_name]})")
-    st.experimental_rerun()
+        data = get_all_points()  # refresh dat
 
 # --- TABULKA BODŮ ---
 st.header("Přehled tříd a aktuálních bodů")
@@ -152,4 +146,4 @@ def color_pl(val):
         return 'color: #ff3333; font-weight: bold;'
     else:
         return ''
-st.dataframe(df.style.applymap(color_pl, subset=["P/L"])) 
+st.dataframe(df.style.applymap(color_pl, subset=["P/L"]))
