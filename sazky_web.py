@@ -94,7 +94,7 @@ for rocnik, tridy in ROCNIKY.items():
     for class_name in tridy:
         col1, col2 = st.columns([2,2])
         bet_on = col1.selectbox(f"{class_name} sází na:", tridy, key=f"beton_{class_name}")
-        bet_amount = col2.number_input(f"Kolik bodů sází {class_name}?", min_value=0, max_value=5, value=0, key=f"betamt_{class_name}")
+        bet_amount = col2.number_input(f"Kolik bodů sází {class_name}?", min_value=0, max_value=50, value=0, key=f"betamt_{class_name}")
         bets[class_name] = {"target": bet_on, "amount": bet_amount}
 
 # --- VYHLÁŠENÍ VÍTĚZE ---
